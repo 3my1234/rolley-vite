@@ -17,9 +17,9 @@ COPY . .
 
 # Build the application
 # VITE_API_URL and other env vars will be injected at build time
-# Use vite build directly to skip TypeScript type checking (Vite still compiles TS)
+# Use npx vite build to skip TypeScript type checking (Vite still compiles TS)
 # This allows the build to succeed even with TypeScript warnings/errors
-RUN vite build
+RUN npx vite build
 
 # Stage 2: Serve with nginx
 FROM nginx:alpine
