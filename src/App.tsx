@@ -34,6 +34,11 @@ function App() {
             createOnLogin: 'users-without-wallets',
           },
         },
+        externalWallets: {
+          solana: {
+            connectors: [], // Explicitly disable Solana to avoid warning
+          },
+        },
       }}
     >
       <AuthProvider>
