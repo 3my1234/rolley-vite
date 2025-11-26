@@ -34,11 +34,7 @@ function App() {
             createOnLogin: 'users-without-wallets',
           },
         },
-        externalWallets: {
-          solana: {
-            connectors: [], // Explicitly disable Solana to avoid warning
-          },
-        },
+        // Removed externalWallets config - not using external wallets, only embedded Ethereum wallets
       }}
     >
       <AuthProvider>

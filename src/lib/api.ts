@@ -248,6 +248,25 @@ class ApiClient {
     });
   }
 
+  // AI endpoints
+  async getSafePicks() {
+    return this.request('/ai/safe-picks', {
+      method: 'GET',
+    });
+  }
+
+  async getRawPredictions() {
+    return this.request('/ai/raw-predictions', {
+      method: 'GET',
+    });
+  }
+
+  async getTodayMatches() {
+    return this.request('/ai/matches/today', {
+      method: 'GET',
+    });
+  }
+
   async reviewAdminEvent(data: {
     eventId: string;
     adminPredictions?: any[];
