@@ -34,7 +34,6 @@ function App() {
             createOnLogin: 'users-without-wallets',
           },
         },
-        // Removed externalWallets config - not using external wallets, only embedded Ethereum wallets
       }}
     >
       <AuthProvider>
