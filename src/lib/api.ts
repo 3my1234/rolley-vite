@@ -1,4 +1,27 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// API Base URL configuration
+// In production (Coolify), use the production backend URL
+// In development, use localhost
+const getApiBaseUrl = () => {
+  // If explicitly set via env var, use that
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // If we're on the production domain, use production backend
+  if (typeof window !== 'undefined' && window.location.hostname.includes('useguidr.com')) {
+    return 'https://qwoo0wg80000ccg4gs8w0wc0.useguidr.com';
+  }
+  
+  // Otherwise, use localhost for development
+  return 'http://localhost:3001';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Debug: log the API URL being used (only in development)
+if (import.meta.env.DEV) {
+  console.log('🔧 API Base URL:', API_BASE_URL);
+}
 
 class ApiClient {
   private baseUrl: string;
