@@ -271,13 +271,23 @@ class ApiClient {
     });
   }
 
-  async generateDailyPicks() {
+  async generateDailyPicks(footballAiData?: any) {
+    const isBrowser = typeof window !== 'undefined';
+    const adminToken = isBrowser ? window.sessionStorage.getItem('adminToken') : null;
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (adminToken) {
+      headers['Authorization'] = `Bearer ${adminToken}`;
+    }
+    
     return this.request('/ai/generate-daily-picks', {
       method: 'POST',
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
+      body: JSON.stringify({ footballAiData }),
     });
   }
 

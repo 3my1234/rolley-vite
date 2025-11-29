@@ -65,14 +65,39 @@ export default function AdminReviewPage() {
   const generateDailyPicks = async () => {
     setGenerating(true);
     try {
-      const result = await apiClient.generateDailyPicks();
-      console.log('Daily picks generated:', result);
+      // Step 1: Fetch picks directly from Football AI service (frontend can access it)
+      console.log('🌐 Fetching picks from Football AI service...');
+      const footballAiResponse = await fetch('https://f4c4o880s8go0co48kkwsw00.useguidr.com/safe-picks/today');
+      
+      if (!footballAiResponse.ok) {
+        throw new Error(`Football AI service returned ${footballAiResponse.status}`);
+      }
+      
+      const safePicks = await footballAiResponse.json();
+      console.log('✅ Got picks from Football AI:', safePicks);
+      
+      if (!safePicks.picks || safePicks.picks.length === 0) {
+        alert(`⚠️ No picks found for today. Reason: ${safePicks.reason || 'Unknown'}`);
+        setGenerating(false);
+        return;
+      }
+      
+      // Step 2: Send to backend to save (backend can't reach Football AI, but can receive data)
+      console.log('📤 Sending picks to backend to save...');
+      const result = await apiClient.generateDailyPicks(safePicks);
+      console.log('✅ Backend saved picks:', result);
+      
       // Refresh events after generating
       await fetchEvents();
-      alert(`✅ Daily picks generated successfully! ${result.data?.matches || 0} matches saved for review.`);
+      
+      if (result.success) {
+        alert(`✅ Daily picks generated successfully! ${result.data?.matches || safePicks.picks.length} matches saved for review.`);
+      } else {
+        alert(`⚠️ Picks fetched but save failed: ${result.message || 'Unknown error'}`);
+      }
     } catch (error: any) {
       console.error('Error generating daily picks:', error);
-      alert(`❌ Error generating picks: ${error.message || 'Unknown error'}`);
+      alert(`❌ Error: ${error.message || 'Unknown error'}`);
     } finally {
       setGenerating(false);
     }
