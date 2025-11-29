@@ -90,10 +90,16 @@ export default function AdminReviewPage() {
       // Refresh events after generating
       await fetchEvents();
       
-      if (result.success) {
-        alert(`✅ Daily picks generated successfully! ${result.data?.matches || safePicks.picks.length} matches saved for review.`);
+      // Check if result has success flag or eventId (both indicate success)
+      if (result?.success || result?.data?.eventId || result?.eventId) {
+        const eventId = result?.data?.eventId || result?.eventId;
+        const matchCount = result?.data?.matches || safePicks.picks.length;
+        alert(`✅ Daily picks generated successfully! ${matchCount} match(es) saved for review. Event ID: ${eventId}`);
+      } else if (result?.error || result?.message) {
+        alert(`⚠️ Picks fetched but save failed: ${result.message || result.error || 'Unknown error'}`);
       } else {
-        alert(`⚠️ Picks fetched but save failed: ${result.message || 'Unknown error'}`);
+        // If no error message, assume success if we got a response
+        alert(`✅ Daily picks generated! Check the review dashboard.`);
       }
     } catch (error: any) {
       console.error('Error generating daily picks:', error);
