@@ -376,7 +376,22 @@ export default function DashboardPage() {
                               AI Generated
                             </span>
                           </div>
-                          <p className="text-zinc-400 text-sm leading-relaxed">{match.reasoning}</p>
+                          <p className="text-zinc-400 text-sm leading-relaxed whitespace-pre-line">{match.reasoning}</p>
+                          
+                          {/* Show data source badge if using real statistics */}
+                          {match.stats?.stats_source === 'football_data_org' && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <span className="px-2 py-1 bg-green-900/30 border border-green-600/30 rounded text-xs text-green-400">
+                                ✅ Real Statistics
+                              </span>
+                              {match.stats?.home_form?.form_string && (
+                                <span className="text-xs text-zinc-500">
+                                  Form: {match.stats.home_form.form_string} / {match.stats.away_form?.form_string || 'N/A'}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          
                           {match.bookmakerMarket && (
                             <div className="mt-2 text-xs text-zinc-500">
                               Market: {match.bookmakerMarket}
