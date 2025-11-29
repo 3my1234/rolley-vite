@@ -52,6 +52,7 @@ export default function AdminReviewPage() {
   const [selectedEvent, setSelectedEvent] = useState<DailyEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [adminComments, setAdminComments] = useState('');
   const [adminPredictions, setAdminPredictions] = useState<Match[]>([]);
   const autoSaveTimeoutRef = useRef<number | null>(null);
@@ -60,6 +61,22 @@ export default function AdminReviewPage() {
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  const generateDailyPicks = async () => {
+    setGenerating(true);
+    try {
+      const result = await apiClient.generateDailyPicks();
+      console.log('Daily picks generated:', result);
+      // Refresh events after generating
+      await fetchEvents();
+      alert(`✅ Daily picks generated successfully! ${result.data?.matches || 0} matches saved for review.`);
+    } catch (error: any) {
+      console.error('Error generating daily picks:', error);
+      alert(`❌ Error generating picks: ${error.message || 'Unknown error'}`);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
@@ -334,7 +351,17 @@ export default function AdminReviewPage() {
               <div className="text-center">
                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">All caught up!</h3>
-                <p className="text-gray-400">No events pending admin review.</p>
+                <p className="text-gray-400 mb-6">No events pending admin review.</p>
+                <Button 
+                  onClick={generateDailyPicks}
+                  disabled={generating}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {generating ? 'Generating...' : '🎯 Generate Daily Picks from AI'}
+                </Button>
+                <p className="text-xs text-gray-500 mt-3">
+                  Fetch today's AI picks and save them for review
+                </p>
               </div>
             </CardContent>
           </Card>

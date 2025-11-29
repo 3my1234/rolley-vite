@@ -271,6 +271,16 @@ class ApiClient {
     });
   }
 
+  async generateDailyPicks() {
+    return this.request('/ai/generate-daily-picks', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
   // AI endpoints
   async getSafePicks() {
     return this.request('/ai/safe-picks', {
