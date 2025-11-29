@@ -16,6 +16,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [privyToken, setPrivyToken] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isOAuthCallback, setIsOAuthCallback] = useState(false);
+
+  // Check if we're in an OAuth callback (has OAuth params in URL)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasOAuthParams = urlParams.has('privy_oauth_state') || urlParams.has('privy_oauth_code') || urlParams.has('privy_oauth_provider');
+    
+    if (hasOAuthParams) {
+      console.log('AuthContext: Detected OAuth callback, waiting for Privy to process...');
+      setIsOAuthCallback(true);
+      // Give Privy extra time to process the OAuth callback
+      // Wait a bit before attempting sync
+      const timer = setTimeout(() => {
+        setIsOAuthCallback(false);
+      }, 2000); // Wait 2 seconds for Privy to process callback
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const syncUser = async () => {
     try {
@@ -73,6 +92,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setPrivyToken(token);
             localStorage.setItem('privy_token', token);
             console.log('AuthContext: User data loaded:', responseData.user);
+            
+            // If we just completed OAuth callback, clean up URL params and redirect
+            if (isOAuthCallback) {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('privy_oauth_state');
+              url.searchParams.delete('privy_oauth_code');
+              url.searchParams.delete('privy_oauth_provider');
+              // Only redirect if we're on the root path with OAuth params
+              if (url.pathname === '/' && (window.location.search.includes('privy_oauth'))) {
+                window.history.replaceState({}, '', '/dashboard');
+                window.location.href = '/dashboard';
+              } else {
+                window.history.replaceState({}, '', url.toString());
+              }
+            }
           } else {
             console.log('AuthContext: No user data in sync response');
           }
@@ -97,6 +131,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Don't attempt sync immediately if we're processing an OAuth callback
+    if (isOAuthCallback) {
+      console.log('AuthContext: Waiting for OAuth callback processing...');
+      return;
+    }
+
     if (authenticated && ready) {
       // Check if we already have a Privy token
       const existingToken = localStorage.getItem('privy_token');
@@ -122,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setLoading(false);
     }
-  }, [authenticated, ready]);
+  }, [authenticated, ready, isOAuthCallback]);
 
   return (
     <AuthContext.Provider value={{ privyToken, user, loading, syncUser }}>
