@@ -365,8 +365,14 @@ class ApiClient {
   }
 
   async getUserHistory() {
+    const token = typeof window !== 'undefined' ? await (window as any).privy?.getAccessToken?.() : null;
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     return this.request('/daily-events/history', {
       credentials: 'include',
+      headers,
     });
   }
 }
