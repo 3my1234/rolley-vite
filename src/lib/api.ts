@@ -364,16 +364,27 @@ class ApiClient {
     });
   }
 
-  async getUserHistory() {
-    const token = typeof window !== 'undefined' ? await (window as any).privy?.getAccessToken?.() : null;
+  async getUserHistory(token?: string) {
     const headers: Record<string, string> = {};
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    return this.request('/daily-events/history', {
+    const response = await this.request<any>('/daily-events/history', {
       credentials: 'include',
       headers,
     });
+    
+    // Ensure we always return an array
+    if (Array.isArray(response)) {
+      return { history: response, success: true };
+    } else if (response?.history && Array.isArray(response.history)) {
+      return { history: response.history, success: response.success ?? true };
+    } else if (response?.data?.history && Array.isArray(response.data.history)) {
+      return { history: response.data.history, success: true };
+    }
+    
+    // Default to empty array
+    return { history: [], success: true };
   }
 }
 

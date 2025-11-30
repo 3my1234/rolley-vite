@@ -50,25 +50,17 @@ export default function HistoryPage() {
         return;
       }
       
-      const response = await apiClient.getUserHistory() as any;
+      const response = await apiClient.getUserHistory(token);
       console.log('Event history API response:', response);
       
-      // Handle different response formats
-      let history: any[] = [];
-      if (Array.isArray(response)) {
-        history = response;
-      } else if (response?.history && Array.isArray(response.history)) {
-        history = response.history;
-      } else if (response?.data?.history && Array.isArray(response.data.history)) {
-        history = response.data.history;
-      } else if (response?.data && Array.isArray(response.data)) {
-        history = response.data;
-      }
+      // getUserHistory now always returns { history: [], success: boolean }
+      const history = Array.isArray(response?.history) ? response.history : [];
       
       console.log('Parsed event history:', history);
       setEventHistory(history);
     } catch (error) {
       console.error('Error fetching event history:', error);
+      // On error, ensure eventHistory is always an array
       setEventHistory([]);
     } finally {
       setLoading(false);
@@ -222,7 +214,7 @@ export default function HistoryPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {eventHistory.length === 0 ? (
+                {!eventHistory || !Array.isArray(eventHistory) || eventHistory.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
                     No completed events found
                   </div>
@@ -247,7 +239,7 @@ export default function HistoryPage() {
                           </div>
                         </div>
 
-                        {event.matches && event.matches.length > 0 && (
+                        {event.matches && Array.isArray(event.matches) && event.matches.length > 0 && (
                           <div className="mt-4 space-y-2">
                             {event.matches.slice(0, 3).map((match: any, idx: number) => (
                               <div key={idx} className="text-sm text-gray-300 pl-4 border-l-2 border-gray-700">
