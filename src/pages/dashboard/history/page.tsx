@@ -28,13 +28,32 @@ export default function HistoryPage() {
 
   const fetchTransactions = async () => {
     try {
+      setLoading(true);
       const token = await getAccessToken();
-      if (!token) return;
+      if (!token) {
+        setTransactions([]);
+        setLoading(false);
+        return;
+      }
       
-      const transactions = await apiClient.getUserTransactions(token, filter !== 'all' ? filter : undefined) as any[];
+      const response = await apiClient.getUserTransactions(token, filter !== 'all' ? filter : undefined);
+      
+      // Ensure transactions is always an array
+      let transactions: any[] = [];
+      if (Array.isArray(response)) {
+        transactions = response;
+      } else if (response && typeof response === 'object') {
+        if (Array.isArray(response.transactions)) {
+          transactions = response.transactions;
+        } else if (Array.isArray(response.data)) {
+          transactions = response.data;
+        }
+      }
+      
       setTransactions(transactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -180,7 +199,7 @@ export default function HistoryPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {transactions.length === 0 ? (
+          {!transactions || !Array.isArray(transactions) || transactions.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               No transactions found
             </div>

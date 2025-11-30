@@ -127,10 +127,13 @@ export default function AdminReviewPage() {
         (Array.isArray((data as any)?.published) && (data as any).published) ||
         [];
 
-      // Filter published events to only show PENDING status (exclude completed events)
-      const activePublished = published.filter((event: DailyEvent) => 
-        event.status === 'PENDING' || !event.status
-      );
+      // CRITICAL: Filter published events to ONLY show PENDING status
+      // Completed events (WON/LOST/VOID) should NOT appear in published list
+      // They should only appear in admin history
+      const activePublished = (published || []).filter((event: DailyEvent) => {
+        const status = event?.status || '';
+        return status === 'PENDING';
+      });
 
       setEvents(pending);
       setPublishedEvents(activePublished);
@@ -847,24 +850,31 @@ export default function AdminReviewPage() {
                               );
                               alert(`✅ Result updated to: ${resultStatus}`);
                               
-                              // Refresh events list (this will filter out completed events)
+                              // Refresh events list (this will filter out completed events from published)
                               await fetchEvents();
                               
-                              // If event is now completed (WON/LOST/VOID), deselect it
+                              // If event is now completed (WON/LOST/VOID), it should be removed from published list
+                              // So we deselect it - it will appear in history instead
                               if (resultStatus !== 'PENDING') {
                                 setSelectedEvent(null);
                                 setAdminPredictions([]);
                                 setAdminComments('');
                                 setResultStatus('');
                                 setResultDetails('');
+                                alert(`✅ Event marked as ${resultStatus}. It has been moved to history.`);
                               } else {
-                                // Refresh selected event if still pending
-                                const updated = await apiClient.getAdminPendingEvents() as any;
-                                const found = [...(updated?.pending || []), ...(updated?.published || [])].find(
-                                  (e: DailyEvent) => e.id === selectedEvent.id
+                                // Event is still pending, refresh it in place
+                                await fetchEvents();
+                                // Try to find it in the refreshed lists
+                                const refreshed = await apiClient.getAdminPendingEvents() as any;
+                                const found = [...(refreshed?.pending || []), ...(refreshed?.published || [])].find(
+                                  (e: DailyEvent) => e.id === selectedEvent.id && e.status === 'PENDING'
                                 );
                                 if (found) {
                                   selectEvent(found);
+                                } else {
+                                  // Event disappeared (shouldn't happen if still PENDING, but handle it)
+                                  setSelectedEvent(null);
                                 }
                               }
                             } catch (error: any) {
