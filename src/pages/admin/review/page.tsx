@@ -49,6 +49,7 @@ interface DailyEvent {
 }
 
 export default function AdminReviewPage() {
+  const navigate = useNavigate();
   const [events, setEvents] = useState<DailyEvent[]>([]);
   const [publishedEvents, setPublishedEvents] = useState<DailyEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<DailyEvent | null>(null);
