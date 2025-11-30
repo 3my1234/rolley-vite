@@ -6,7 +6,8 @@ import { Button } from '../../../components/ui/button';
 import { Textarea } from '../../../components/ui/textarea';
 import { Badge } from '../../../components/ui/badge';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
-import { CheckCircle, AlertTriangle, Clock, Target, Trash2, RotateCcw, Trophy, XCircle, Ban } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Clock, Target, Trash2, RotateCcw, Trophy, XCircle, Ban, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../../lib/api';
 
 interface Match {
@@ -382,6 +383,16 @@ export default function AdminReviewPage() {
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Button
+              onClick={() => navigate('/admin')}
+              variant="outline"
+              className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-800"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
           <h1 className="text-3xl font-bold mb-2">Admin Review Dashboard</h1>
           <p className="text-gray-400">Review and refine AI predictions before they go live</p>
         </div>
@@ -832,14 +843,26 @@ export default function AdminReviewPage() {
                                 resultDetails || undefined
                               );
                               alert(`✅ Result updated to: ${resultStatus}`);
+                              
+                              // Refresh events list (this will filter out completed events)
                               await fetchEvents();
-                              // Refresh selected event
-                              const updated = await apiClient.getAdminPendingEvents();
-                              const found = [...(updated.pending || []), ...(updated.published || [])].find(
-                                (e: DailyEvent) => e.id === selectedEvent.id
-                              );
-                              if (found) {
-                                selectEvent(found);
+                              
+                              // If event is now completed (WON/LOST/VOID), deselect it
+                              if (resultStatus !== 'PENDING') {
+                                setSelectedEvent(null);
+                                setAdminPredictions([]);
+                                setAdminComments('');
+                                setResultStatus('');
+                                setResultDetails('');
+                              } else {
+                                // Refresh selected event if still pending
+                                const updated = await apiClient.getAdminPendingEvents();
+                                const found = [...(updated.pending || []), ...(updated.published || [])].find(
+                                  (e: DailyEvent) => e.id === selectedEvent.id
+                                );
+                                if (found) {
+                                  selectEvent(found);
+                                }
                               }
                             } catch (error: any) {
                               console.error('Error updating result:', error);

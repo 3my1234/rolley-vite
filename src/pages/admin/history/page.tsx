@@ -4,10 +4,13 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
 import { formatDate, formatDateTime } from '../../../lib/utils';
-import { Trophy, XCircle, Ban, Target, Calendar } from 'lucide-react';
+import { Trophy, XCircle, Ban, Target, Calendar, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../../../components/ui/button';
 import { apiClient } from '../../../lib/api';
 
 export default function AdminHistoryPage() {
+  const navigate = useNavigate();
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,6 +62,16 @@ export default function AdminHistoryPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div>
+          <div className="flex items-center gap-4 mb-4">
+            <Button
+              onClick={() => navigate('/admin')}
+              variant="outline"
+              className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-800"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
           <h1 className="text-3xl font-bold text-white">Event History</h1>
           <p className="text-gray-300">View all completed events and their results</p>
         </div>

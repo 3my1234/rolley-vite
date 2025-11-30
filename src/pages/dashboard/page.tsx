@@ -68,6 +68,15 @@ export default function DashboardPage() {
     };
 
     fetchDataIfReady();
+    
+    // Auto-refresh every 30 seconds to get latest predictions
+    const refreshInterval = setInterval(() => {
+      if (privyToken && !authLoading) {
+        fetchData(privyToken).catch(console.error);
+      }
+    }, 30000); // 30 seconds
+    
+    return () => clearInterval(refreshInterval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [privyToken, authLoading]);
 

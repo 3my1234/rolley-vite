@@ -43,10 +43,22 @@ export default function HistoryPage() {
   const fetchEventHistory = async () => {
     try {
       setLoading(true);
-      const history = await apiClient.getUserHistory() as any;
-      setEventHistory(history.history || []);
+      const token = await getAccessToken();
+      if (!token) return;
+      
+      const response = await apiClient.getUserHistory() as any;
+      // Handle different response formats
+      const history = Array.isArray(response) 
+        ? response 
+        : Array.isArray(response?.history) 
+          ? response.history 
+          : Array.isArray(response?.data?.history)
+            ? response.data.history
+            : [];
+      setEventHistory(history);
     } catch (error) {
       console.error('Error fetching event history:', error);
+      setEventHistory([]);
     } finally {
       setLoading(false);
     }
