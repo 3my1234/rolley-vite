@@ -349,6 +349,26 @@ class ApiClient {
       credentials: 'include',
     });
   }
+
+  async updateEventResult(eventId: string, status: string, result?: string) {
+    return this.request(`/admin/daily-event/${eventId}/result`, {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ status, result }),
+    });
+  }
+
+  async getAdminHistory(limit = 50) {
+    return this.request(`/admin/history?limit=${limit}`, {
+      credentials: 'include',
+    });
+  }
+
+  async getUserHistory() {
+    return this.request('/daily-events/history', {
+      credentials: 'include',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

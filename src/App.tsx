@@ -17,6 +17,7 @@ import CreateEventPage from './pages/admin/create-event/page';
 import DailyMatchesPage from './pages/admin/daily-matches/page';
 import AdminTokensPage from './pages/admin/tokens/page';
 import AdminReviewPage from './pages/admin/review/page';
+import AdminHistoryPage from './pages/admin/history/page';
 
 function App() {
   return (
@@ -57,6 +58,7 @@ function App() {
                 <Route path="daily-matches" element={<DailyMatchesPage />} />
                 <Route path="tokens" element={<AdminTokensPage />} />
                 <Route path="review" element={<AdminReviewPage />} />
+                <Route path="history" element={<AdminHistoryPage />} />
               </Route>
             </Routes>
           </div>

@@ -4,19 +4,27 @@ import { useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { formatCurrency, formatDateTime } from '../../../lib/utils';
-import { ArrowDownToLine, ArrowUpFromLine, TrendingUp } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import { Badge } from '../../../components/ui/badge';
+import { formatCurrency, formatDateTime, formatDate } from '../../../lib/utils';
+import { ArrowDownToLine, ArrowUpFromLine, TrendingUp, Trophy, XCircle, Ban, Target } from 'lucide-react';
 import { apiClient } from '../../../lib/api';
 
 export default function HistoryPage() {
   const { getAccessToken } = usePrivy();
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [eventHistory, setEventHistory] = useState<any[]>([]);
   const [filter, setFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState('transactions');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchTransactions();
-  }, [filter]);
+    if (activeTab === 'transactions') {
+      fetchTransactions();
+    } else {
+      fetchEventHistory();
+    }
+  }, [filter, activeTab]);
 
   const fetchTransactions = async () => {
     try {
@@ -27,6 +35,18 @@ export default function HistoryPage() {
       setTransactions(transactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEventHistory = async () => {
+    try {
+      setLoading(true);
+      const history = await apiClient.getUserHistory() as any;
+      setEventHistory(history.history || []);
+    } catch (error) {
+      console.error('Error fetching event history:', error);
     } finally {
       setLoading(false);
     }
@@ -67,29 +87,52 @@ export default function HistoryPage() {
     );
   }
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'WON':
+        return <Badge className="bg-green-600 text-white"><Trophy className="h-3 w-3 mr-1" /> Won</Badge>;
+      case 'LOST':
+        return <Badge className="bg-red-600 text-white"><XCircle className="h-3 w-3 mr-1" /> Lost</Badge>;
+      case 'VOID':
+        return <Badge className="bg-yellow-600 text-white"><Ban className="h-3 w-3 mr-1" /> Void</Badge>;
+      default:
+        return <Badge className="bg-gray-600 text-white">Pending</Badge>;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white">Transaction History</h1>
-            <p className="text-gray-300">View all your transactions and activities</p>
+            <h1 className="text-3xl font-bold text-white">History</h1>
+            <p className="text-gray-300">View your transactions and event history</p>
           </div>
-        <Select value={filter} onValueChange={setFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Transactions</SelectItem>
-            <SelectItem value="DEPOSIT">Deposits</SelectItem>
-            <SelectItem value="WITHDRAWAL">Withdrawals</SelectItem>
-            <SelectItem value="DAILY_ROLLOVER">Rollovers</SelectItem>
-            <SelectItem value="STAKE_PROFIT">Stakes</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+        </div>
 
-      <Card>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="transactions">Transactions</TabsTrigger>
+            <TabsTrigger value="events">Event History</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="transactions" className="space-y-4">
+            <div className="flex justify-end">
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Transactions</SelectItem>
+                  <SelectItem value="DEPOSIT">Deposits</SelectItem>
+                  <SelectItem value="WITHDRAWAL">Withdrawals</SelectItem>
+                  <SelectItem value="DAILY_ROLLOVER">Rollovers</SelectItem>
+                  <SelectItem value="STAKE_PROFIT">Stakes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Card>
         <CardHeader>
           <CardTitle>Transactions</CardTitle>
           <CardDescription>
@@ -145,6 +188,80 @@ export default function HistoryPage() {
           )}
         </CardContent>
       </Card>
+          </TabsContent>
+
+          <TabsContent value="events" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Event History</CardTitle>
+                <CardDescription>
+                  {eventHistory.length} completed event(s)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {eventHistory.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    No completed events found
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {eventHistory.map((event: any) => (
+                      <div
+                        key={event.id}
+                        className="p-4 border border-white/10 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="font-semibold text-white">
+                                {formatDate(new Date(event.date))}
+                              </h3>
+                              {getStatusBadge(event.status)}
+                            </div>
+                            <p className="text-sm text-gray-400">
+                              {event.sport.toUpperCase()} • {event.matches?.length || 0} match(es) • {event.totalOdds?.toFixed(4)}x odds
+                            </p>
+                          </div>
+                        </div>
+
+                        {event.matches && event.matches.length > 0 && (
+                          <div className="mt-4 space-y-2">
+                            {event.matches.slice(0, 3).map((match: any, idx: number) => (
+                              <div key={idx} className="text-sm text-gray-300 pl-4 border-l-2 border-gray-700">
+                                <div className="font-medium">
+                                  {match.homeTeam} vs {match.awayTeam}
+                                </div>
+                                <div className="text-xs text-gray-400">
+                                  {match.prediction} • {match.odds}x
+                                </div>
+                              </div>
+                            ))}
+                            {event.matches.length > 3 && (
+                              <div className="text-xs text-gray-500 pl-4">
+                                +{event.matches.length - 3} more match(es)
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {event.result && (
+                          <div className="mt-4 p-3 bg-gray-800/50 rounded-lg">
+                            <div className="text-xs text-gray-400 mb-1">Result Details:</div>
+                            <div className="text-sm text-gray-300">{event.result}</div>
+                          </div>
+                        )}
+
+                        <div className="mt-3 text-xs text-gray-500">
+                          Completed: {formatDateTime(new Date(event.updatedAt || event.createdAt))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

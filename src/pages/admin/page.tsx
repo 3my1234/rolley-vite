@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Users, TrendingUp, DollarSign, Activity, Plus, Calendar, CheckCircle, Trophy } from 'lucide-react';
+import { Users, TrendingUp, DollarSign, Activity, Plus, Calendar, CheckCircle, Trophy, History } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '../../lib/utils';
 import { apiClient } from '../../lib/api';
 
@@ -142,7 +142,7 @@ export default function AdminPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-4 gap-6">
         <button
         onClick={() => navigate('/admin/create-event')}
           className="group relative overflow-hidden p-8 rounded-2xl bg-gradient-to-br from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 transition-all hover:scale-105 hover:shadow-2xl text-left"
@@ -194,6 +194,24 @@ export default function AdminPage() {
               </p>
             </div>
             <Activity className="w-8 h-8 opacity-50 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </button>
+
+        <button
+        onClick={() => navigate('/admin/history')}
+          className="group relative overflow-hidden p-8 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all hover:scale-105 hover:shadow-2xl text-left"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <History className="w-8 h-8" />
+                <h3 className="text-2xl font-bold">Event History</h3>
+              </div>
+              <p className="text-purple-100 text-sm">
+                View completed events and results
+              </p>
+            </div>
+            <History className="w-8 h-8 opacity-50 group-hover:opacity-100 transition-opacity" />
           </div>
         </button>
       </div>

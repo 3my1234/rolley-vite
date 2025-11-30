@@ -340,7 +340,7 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {dailyEvent?.matches && dailyEvent.matches.length > 0 ? (
+            {dailyEvent && dailyEvent.status === 'PENDING' && dailyEvent.matches && dailyEvent.matches.length > 0 ? (
               <div className="space-y-4">
                 {dailyEvent.matches.map((match: any, idx: number) => (
                   <div
@@ -505,7 +505,22 @@ export default function DashboardPage() {
                 <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-zinc-800 flex items-center justify-center">
                   <Calendar className="h-6 w-6 text-zinc-600" />
                 </div>
-                <p className="text-zinc-500">No matches available today</p>
+                {dailyEvent && dailyEvent.status !== 'PENDING' ? (
+                  <div className="text-center py-8">
+                    <p className="text-zinc-400 mb-2">This event has been completed.</p>
+                    <p className="text-sm text-zinc-500 mb-4">
+                      Status: {dailyEvent.status === 'WON' ? '✅ Won' : dailyEvent.status === 'LOST' ? '❌ Lost' : '⚪ Void'}
+                    </p>
+                    {dailyEvent.result && (
+                      <div className="p-4 bg-zinc-800 rounded-lg text-left max-w-2xl mx-auto">
+                        <p className="text-sm text-zinc-300">{dailyEvent.result}</p>
+                      </div>
+                    )}
+                    <p className="text-zinc-500 mt-4">Check your history to view all completed events.</p>
+                  </div>
+                ) : (
+                  <p className="text-zinc-500">No matches available today</p>
+                )}
               </div>
             )}
           </CardContent>

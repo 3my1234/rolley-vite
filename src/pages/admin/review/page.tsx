@@ -6,7 +6,7 @@ import { Button } from '../../../components/ui/button';
 import { Textarea } from '../../../components/ui/textarea';
 import { Badge } from '../../../components/ui/badge';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
-import { CheckCircle, AlertTriangle, Clock, Target, Trash2, RotateCcw } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Clock, Target, Trash2, RotateCcw, Trophy, XCircle, Ban } from 'lucide-react';
 import { apiClient } from '../../../lib/api';
 
 interface Match {
@@ -55,6 +55,9 @@ export default function AdminReviewPage() {
   const [generating, setGenerating] = useState(false);
   const [adminComments, setAdminComments] = useState('');
   const [adminPredictions, setAdminPredictions] = useState<Match[]>([]);
+  const [resultStatus, setResultStatus] = useState<string>('');
+  const [resultDetails, setResultDetails] = useState('');
+  const [updatingResult, setUpdatingResult] = useState(false);
   const autoSaveTimeoutRef = useRef<number | null>(null);
   const skipAutoSaveRef = useRef(true);
 
@@ -120,8 +123,13 @@ export default function AdminReviewPage() {
         (Array.isArray((data as any)?.published) && (data as any).published) ||
         [];
 
+      // Filter published events to only show PENDING status (exclude completed events)
+      const activePublished = published.filter((event: DailyEvent) => 
+        event.status === 'PENDING' || !event.status
+      );
+
       setEvents(pending);
-      setPublishedEvents(published);
+      setPublishedEvents(activePublished);
 
       // If currently selected event moved to published, keep it selected
       if (selectedEvent) {
@@ -158,6 +166,8 @@ export default function AdminReviewPage() {
     skipAutoSaveRef.current = true;
     setSelectedEvent(event);
     setAdminComments(event.adminComments || '');
+    setResultStatus(event.status || 'PENDING');
+    setResultDetails(event.result || '');
     const base =
       event.adminPredictions && event.adminPredictions.length
         ? event.adminPredictions
@@ -376,23 +386,39 @@ export default function AdminReviewPage() {
           <p className="text-gray-400">Review and refine AI predictions before they go live</p>
         </div>
 
+        {/* Always show Generate button at the top */}
+        <Card className="bg-gray-800 border-gray-700 mb-6">
+          <CardContent className="p-6">
+            <div className="text-center">
+              <Button 
+                onClick={generateDailyPicks}
+                disabled={generating}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
+                size="lg"
+              >
+                {generating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2 inline-block"></div>
+                    Generating...
+                  </>
+                ) : (
+                  '🎯 Generate Today\'s AI Picks'
+                )}
+              </Button>
+              <p className="text-xs text-gray-500 mt-3">
+                Fetch today's AI picks and save them for review. This will create a new event for today.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {events.length === 0 && publishedEvents.length === 0 ? (
           <Card className="bg-gray-800 border-gray-700">
             <CardContent className="p-6">
               <div className="text-center">
                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">All caught up!</h3>
-                <p className="text-gray-400 mb-6">No events pending admin review.</p>
-                <Button 
-                  onClick={generateDailyPicks}
-                  disabled={generating}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {generating ? 'Generating...' : '🎯 Generate Daily Picks from AI'}
-                </Button>
-                <p className="text-xs text-gray-500 mt-3">
-                  Fetch today's AI picks and save them for review
-                </p>
+                <p className="text-gray-400 mb-6">No events pending admin review. Use the button above to generate today's picks.</p>
               </div>
             </CardContent>
           </Card>
@@ -703,6 +729,141 @@ export default function AdminReviewPage() {
                     Approve & Publish
                   </Button>
                 </div>
+
+                {/* Result Tracking Section - Only show if event is published */}
+                {selectedEvent.adminReviewed && (
+                  <Card className="bg-gray-800 border-gray-700 mt-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Target className="h-5 w-5 mr-2" />
+                        Match Result
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-400 mb-2 block">
+                            Current Status
+                          </label>
+                          <div className="flex items-center gap-2 mb-4">
+                            {selectedEvent.status === 'WON' && (
+                              <Badge className="bg-green-600 text-white">
+                                <Trophy className="h-3 w-3 mr-1" />
+                                Won
+                              </Badge>
+                            )}
+                            {selectedEvent.status === 'LOST' && (
+                              <Badge className="bg-red-600 text-white">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Lost
+                              </Badge>
+                            )}
+                            {selectedEvent.status === 'VOID' && (
+                              <Badge className="bg-yellow-600 text-white">
+                                <Ban className="h-3 w-3 mr-1" />
+                                Void
+                              </Badge>
+                            )}
+                            {(selectedEvent.status === 'PENDING' || !selectedEvent.status) && (
+                              <Badge className="bg-gray-600 text-white">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Pending
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-400 mb-2 block">
+                            Update Result Status
+                          </label>
+                          <div className="grid grid-cols-3 gap-3 mb-4">
+                            <Button
+                              type="button"
+                              onClick={() => setResultStatus('WON')}
+                              variant={resultStatus === 'WON' ? 'default' : 'outline'}
+                              className={resultStatus === 'WON' ? 'bg-green-600 hover:bg-green-700' : ''}
+                            >
+                              <Trophy className="h-4 w-4 mr-2" />
+                              Won
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={() => setResultStatus('LOST')}
+                              variant={resultStatus === 'LOST' ? 'default' : 'outline'}
+                              className={resultStatus === 'LOST' ? 'bg-red-600 hover:bg-red-700' : ''}
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Lost
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={() => setResultStatus('VOID')}
+                              variant={resultStatus === 'VOID' ? 'default' : 'outline'}
+                              className={resultStatus === 'VOID' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
+                            >
+                              <Ban className="h-4 w-4 mr-2" />
+                              Void
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-400 mb-2 block">
+                            Result Details (Optional)
+                          </label>
+                          <Textarea
+                            value={resultDetails}
+                            onChange={(e) => setResultDetails(e.target.value)}
+                            placeholder="e.g., Match finished 2-1. All predictions correct. Over 0.5 goals won, home team scored 2 goals..."
+                            className="bg-gray-700 border-gray-600"
+                            rows={3}
+                          />
+                        </div>
+
+                        <Button
+                          onClick={async () => {
+                            if (!selectedEvent) return;
+                            setUpdatingResult(true);
+                            try {
+                              await apiClient.updateEventResult(
+                                selectedEvent.id,
+                                resultStatus,
+                                resultDetails || undefined
+                              );
+                              alert(`✅ Result updated to: ${resultStatus}`);
+                              await fetchEvents();
+                              // Refresh selected event
+                              const updated = await apiClient.getAdminPendingEvents();
+                              const found = [...(updated.pending || []), ...(updated.published || [])].find(
+                                (e: DailyEvent) => e.id === selectedEvent.id
+                              );
+                              if (found) {
+                                selectEvent(found);
+                              }
+                            } catch (error: any) {
+                              console.error('Error updating result:', error);
+                              alert(`❌ Error: ${error.message || 'Failed to update result'}`);
+                            } finally {
+                              setUpdatingResult(false);
+                            }
+                          }}
+                          disabled={updatingResult || resultStatus === selectedEvent.status}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          {updatingResult ? 'Updating...' : 'Update Result'}
+                        </Button>
+
+                        {selectedEvent.result && (
+                          <div className="p-3 bg-gray-700/50 rounded-lg">
+                            <div className="text-xs text-gray-400 mb-1">Previous Result Details:</div>
+                            <div className="text-sm text-gray-300">{selectedEvent.result}</div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
           </div>
