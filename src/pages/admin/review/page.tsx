@@ -8,8 +8,6 @@ import { Badge } from '../../../components/ui/badge';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
 import { CheckCircle, AlertTriangle, Clock, Target, Trash2, RotateCcw, Trophy, XCircle, Ban, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const navigate = useNavigate();
 import { apiClient } from '../../../lib/api';
 
 interface Match {
