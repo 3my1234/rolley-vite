@@ -8,6 +8,8 @@ import { Badge } from '../../../components/ui/badge';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
 import { CheckCircle, AlertTriangle, Clock, Target, Trash2, RotateCcw, Trophy, XCircle, Ban, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+const navigate = useNavigate();
 import { apiClient } from '../../../lib/api';
 
 interface Match {
@@ -31,6 +33,7 @@ interface Match {
 }
 
 interface DailyEvent {
+  result?: string | null;
   id: string;
   date: string;
   sport: string;
@@ -95,12 +98,13 @@ export default function AdminReviewPage() {
       await fetchEvents();
       
       // Check if result has success flag or eventId (both indicate success)
-      if (result?.success || result?.data?.eventId || result?.eventId) {
-        const eventId = result?.data?.eventId || result?.eventId;
-        const matchCount = result?.data?.matches || safePicks.picks.length;
+      const resultData = result as any;
+      if (resultData?.success || resultData?.data?.eventId || resultData?.eventId) {
+        const eventId = resultData?.data?.eventId || resultData?.eventId;
+        const matchCount = resultData?.data?.matches || safePicks.picks.length;
         alert(`✅ Daily picks generated successfully! ${matchCount} match(es) saved for review. Event ID: ${eventId}`);
-      } else if (result?.error || result?.message) {
-        alert(`⚠️ Picks fetched but save failed: ${result.message || result.error || 'Unknown error'}`);
+      } else if (resultData?.error || resultData?.message) {
+        alert(`⚠️ Picks fetched but save failed: ${resultData.message || resultData.error || 'Unknown error'}`);
       } else {
         // If no error message, assume success if we got a response
         alert(`✅ Daily picks generated! Check the review dashboard.`);
@@ -856,8 +860,8 @@ export default function AdminReviewPage() {
                                 setResultDetails('');
                               } else {
                                 // Refresh selected event if still pending
-                                const updated = await apiClient.getAdminPendingEvents();
-                                const found = [...(updated.pending || []), ...(updated.published || [])].find(
+                                const updated = await apiClient.getAdminPendingEvents() as any;
+                                const found = [...(updated?.pending || []), ...(updated?.published || [])].find(
                                   (e: DailyEvent) => e.id === selectedEvent.id
                                 );
                                 if (found) {

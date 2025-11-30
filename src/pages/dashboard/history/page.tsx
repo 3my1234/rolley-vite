@@ -43,21 +43,46 @@ export default function HistoryPage() {
   const fetchEventHistory = async () => {
     try {
       setLoading(true);
-      const token = await getAccessToken();
-      if (!token) {
-        setEventHistory([]);
-        setLoading(false);
-        return;
+      
+      // Try to get token with timeout
+      let token: string | null = null;
+      try {
+        token = await Promise.race([
+          getAccessToken(),
+          new Promise<string | null>((_, reject) => 
+            setTimeout(() => reject(new Error('Token timeout')), 5000)
+          )
+        ]) as string | null;
+      } catch (tokenError) {
+        console.warn('Failed to get access token:', tokenError);
+        // Continue without token - API might still work with session cookies
       }
       
-      const response = await apiClient.getUserHistory(token);
+      // Call API with or without token
+      const response = token 
+        ? await apiClient.getUserHistory(token)
+        : await apiClient.getUserHistory();
+      
       console.log('Event history API response:', response);
       
       // getUserHistory now always returns { history: [], success: boolean }
-      const history = Array.isArray(response?.history) ? response.history : [];
+      // But handle all possible response formats
+      let history: any[] = [];
+      if (Array.isArray(response)) {
+        history = response;
+      } else if (response && typeof response === 'object') {
+        if (Array.isArray(response.history)) {
+          history = response.history;
+        } else if (Array.isArray(response.data)) {
+          history = response.data;
+        } else if (Array.isArray((response as any).data?.history)) {
+          history = (response as any).data.history;
+        }
+      }
       
       console.log('Parsed event history:', history);
-      setEventHistory(history);
+      // Ensure it's always an array before setting
+      setEventHistory(Array.isArray(history) ? history : []);
     } catch (error) {
       console.error('Error fetching event history:', error);
       // On error, ensure eventHistory is always an array

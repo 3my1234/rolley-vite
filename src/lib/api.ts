@@ -365,26 +365,34 @@ class ApiClient {
   }
 
   async getUserHistory(token?: string) {
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    try {
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await this.request<any>('/daily-events/history', {
+        credentials: 'include',
+        headers,
+      });
+      
+      // Ensure we always return an array
+      if (Array.isArray(response)) {
+        return { history: response, success: true };
+      } else if (response?.history && Array.isArray(response.history)) {
+        return { history: response.history, success: response.success ?? true };
+      } else if (response?.data?.history && Array.isArray(response.data.history)) {
+        return { history: response.data.history, success: true };
+      } else if (response?.data && Array.isArray(response.data)) {
+        return { history: response.data, success: true };
+      }
+      
+      // Default to empty array
+      return { history: [], success: true };
+    } catch (error) {
+      console.error('getUserHistory API error:', error);
+      // Return empty array on error
+      return { history: [], success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
-    const response = await this.request<any>('/daily-events/history', {
-      credentials: 'include',
-      headers,
-    });
-    
-    // Ensure we always return an array
-    if (Array.isArray(response)) {
-      return { history: response, success: true };
-    } else if (response?.history && Array.isArray(response.history)) {
-      return { history: response.history, success: response.success ?? true };
-    } else if (response?.data?.history && Array.isArray(response.data.history)) {
-      return { history: response.data.history, success: true };
-    }
-    
-    // Default to empty array
-    return { history: [], success: true };
   }
 }
 
